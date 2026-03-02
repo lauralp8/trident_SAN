@@ -422,7 +422,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
         'kind': 'TridentBackendConfig',
         'metadata': {
             'name': backend_name,
-            'namespace': 'trident'
+            'namespace': 'trident_segundo'
         },
         'spec': {
             'version': 1,
