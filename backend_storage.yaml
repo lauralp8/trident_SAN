@@ -1,0 +1,66 @@
+apiVersion: trident.netapp.io/v1
+kind: TridentBackendConfig
+metadata:
+  name: backend-jc-san
+spec:
+  version: 1
+  backendName: ontap-san_192_168_205_203
+  storageDriverName: ontap-san
+  useREST: true
+  name: backend-jc-san
+  managementLIF: 192.168.204.203
+  dataLIF: 192.168.205.203
+  svm: SVM
+  storagePrefix: trident
+  useCHAP: false
+  # chapInitiatorSecret: ''
+  # chapTargetInitiatorSecret: ''
+  # chapUserName: ''
+  # chapTargetUsername: ''
+  # labels: ''
+  # clientCertificate: ''
+  # clientPrivateKey: ''
+  # trustedCACertificate: ''
+  # aggregate: ''
+  # limitAggregateUsage: ''
+  # limitVolumeSize: ''
+  lunsPerFlexvol: '100'
+  sanType: iscsi
+  # formatOptions: ''
+  # limitVolumePoolSize: ''
+  denyNewVolumePools: 'false'
+  defaults:
+    spaceReserve: none
+    spaceAllocation: 'true'
+    snapshotPolicy: none
+    snapshotReserve: '0'
+    encryption: 'false'
+    # qosPolicy: ''
+    # adaptiveQosPolicy: ''
+    tieringPolicy: none
+    # luksEncryption: ''
+    # nameTemplate: ''
+  debugTraceFlags:
+    api: false
+    method: false
+  credentials:
+    name: trident-creds
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rhoso-san
+  annotations:
+    storageclass.kubernetes.io/is-default-class: 'true'
+    argocd.argoproj.io/sync-wave: '5'
+provisioner: csi.trident.netapp.io
+reclaimPolicy: Delete
+parameters:
+  backendType: ontap-san
+  fsType: ext4
+  provisioningType: thin
+  snapshots: 'true'
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
