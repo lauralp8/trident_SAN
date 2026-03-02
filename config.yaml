@@ -24,11 +24,11 @@ backend:
   # storagePrefix: trident
   
   # === PARÁMETROS CHAP ===
-  # useCHAP: false
-  # chapInitiatorSecret: ""  # Obligatorio si useCHAP=true
-  # chapTargetInitiatorSecret: ""  # Obligatorio si useCHAP=true
-  # chapUserName: ""  # Obligatorio si useCHAP=true
-  # chapTargetUsername: ""  # Obligatorio si useCHAP=true
+  useCHAP: true
+  chapInitiatorSecret: "cl9qxWfnUFoinvk"
+  chapTargetInitiatorSecret: "rwbwtuigONgbw"
+  chapUserName: "uh2a1io325bFFILn"
+  chapTargetUsername: "iJF4sgjrnwOwQ"
   
   # === OTROS PARÁMETROS ===
   # labels: ""
