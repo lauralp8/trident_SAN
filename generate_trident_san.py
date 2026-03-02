@@ -571,7 +571,7 @@ def generate_trident_files(
         print(f"⚠ Secret no generado (no hay credenciales en config.yaml)")
         print(f"  El backend usará el Secret existente en Kubernetes: '{config.secret.name}'")
     
-    print("\n¡Archivos YAML generados exitosamente!")
+    print("\nArchivo backend_storage.yaml correctamente generado para Trident SAN.")
 
 
 def main(config_file: str = None) -> None:
@@ -615,9 +615,16 @@ def main(config_file: str = None) -> None:
     config = load_config(config_file)
     generate_trident_files(config)
     
-    print(f"\n Para personalizar:")
+    print(f"\n ------------------------------------------------------------------")
+    print(f"\n Instrucciones:")
     print(f"  1. Edita {config_file}")
-    print(f"  2. Ejecuta: python generate_trident_san.py")
+    print(f"  2. Ejecuta: python generate_trident_nas.py")
+    print(f"  3. Aplica los archivos generados en tu clúster:")
+    print(f"     - kubectl apply -f backend_storage.yaml -n trident")
+    print(f"     - kubectl apply -f secret.yaml -n trident")
+    print(f"  4. Verifica los recursos creados:")
+    print(f"     - kubectl get tridentbackendconfig -n trident")
+    print(f"\n ------------------------------------------------------------------")
 
 
 if __name__ == "__main__":
