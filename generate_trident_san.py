@@ -95,6 +95,11 @@ class BackendConfig:
 
     """
     name: str = 'backend-jc-san'
+    namespace: str = 'trident'
+    version: int = 1
+    backendName: str = ''  # Si está vacío, se genera automáticamente como ontap-san_{dataLIF}
+    storageDriverName: str = 'ontap-san'
+    useREST: bool = True
     managementLIF: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     dataLIF: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     svm: str = ''  # Campo obligatorio - debe especificarse en config.yaml
@@ -147,11 +152,19 @@ class StorageClassConfig:
         name: Nombre visible del StorageClass en K8s
         isDefault: Si es true, se usa cuando no se especifica StorageClass en PVC
         syncWave: Orden de sincronización para ArgoCD (deployment automatizado)
+        provisioner: Driver CSI de Trident (default: csi.trident.netapp.io)
+        reclaimPolicy: Política de eliminación de volúmenes (Delete/Retain)
+        allowVolumeExpansion: Permitir expansión de volúmenes dinámicamente
+        volumeBindingMode: Modo de binding (Immediate/WaitForFirstConsumer)
         parameters: Criterios de selección de backend
     """
     name: str = 'rhoso-san'
     isDefault: bool = True
     syncWave: str = '5'
+    provisioner: str = 'csi.trident.netapp.io'
+    reclaimPolicy: str = 'Delete'
+    allowVolumeExpansion: bool = True
+    volumeBindingMode: str = 'Immediate'
     parameters: StorageClassParameters = field(default_factory=StorageClassParameters)
 
 
@@ -394,8 +407,8 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     Transforma la configuración de Python en un diccionario que representa
     el recurso Kubernetes TridentBackendConfig. Incluye lógica especial:
     
-    - Auto-generación de backendName basado en dataLIF sanitizada
-    - Inyección de campos estáticos (storageDriverName, sanType, useREST)
+    - Auto-generación de backendName basado en dataLIF sanitizada (si no se especifica)
+    - Uso de campos configurables (storageDriverName, sanType, useREST, etc.)
     - Inclusión de defaults y debugTraceFlags como subsecciones
     
     Args:
@@ -411,6 +424,11 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     debug_trace_flags = backend.pop('debugTraceFlags')
     credentials_name = backend.pop('credentialsName')  # No incluir en el spec
     backend_name = backend.pop('name')  # Extraer name para metadata, no debe estar en spec
+    namespace = backend.pop('namespace')  # Extraer namespace para metadata
+    version = backend.pop('version')  # Extraer version para spec
+    backend_name_spec = backend.pop('backendName')  # Extraer backendName para spec
+    storage_driver_name = backend.pop('storageDriverName')  # Extraer storageDriverName
+    use_rest = backend.pop('useREST')  # Extraer useREST
     
     # IMPORTANTE: Los campos CHAP NO deben estar en el spec del backend
     # Estos valores deben ir en el Secret, no aquí
@@ -419,23 +437,24 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     backend.pop('chapUserName', None)
     backend.pop('chapTargetUsername', None)
     
-    # Generar backendName automáticamente: ontap-san_<dataLIF>
+    # Generar backendName automáticamente solo si no se especificó: ontap-san_<dataLIF>
     # Reemplazar puntos por guiones bajos para nombres válidos
-    data_lif_sanitized = backend['dataLIF'].replace('.', '_')
-    auto_backend_name = f"ontap-san_{data_lif_sanitized}"
+    if not backend_name_spec:
+        data_lif_sanitized = backend['dataLIF'].replace('.', '_')
+        backend_name_spec = f"{storage_driver_name}_{data_lif_sanitized}"
     
     return {
         'apiVersion': 'trident.netapp.io/v1',
         'kind': 'TridentBackendConfig',
         'metadata': {
             'name': backend_name,
-            'namespace': 'trident'
+            'namespace': namespace
         },
         'spec': {
-            'version': 1,
-            'backendName': auto_backend_name,
-            'storageDriverName': 'ontap-san',
-            'useREST': True,
+            'version': version,
+            'backendName': backend_name_spec,
+            'storageDriverName': storage_driver_name,
+            'useREST': use_rest,
             **backend,
             'defaults': defaults,
             'debugTraceFlags': debug_trace_flags,
@@ -465,11 +484,11 @@ def create_storage_class_yaml(config: StorageClassConfig) -> Dict[str, Any]:
                 'argocd.argoproj.io/sync-wave': config.syncWave
             }
         },
-        'provisioner': 'csi.trident.netapp.io',
-        'reclaimPolicy': 'Delete',
+        'provisioner': config.provisioner,
+        'reclaimPolicy': config.reclaimPolicy,
         'parameters': asdict(config.parameters),
-        'allowVolumeExpansion': True,
-        'volumeBindingMode': 'Immediate'
+        'allowVolumeExpansion': config.allowVolumeExpansion,
+        'volumeBindingMode': config.volumeBindingMode
     }
 
 
@@ -617,7 +636,7 @@ def main(config_file: str = None) -> None:
     
     print(f"\n ------------------------------------------------------------------")
     print(f"\n Instrucciones:")
-    print(f"  1. Edita {config_file}")
+    print(f"  1. Edita config.yaml y secret.yaml")
     print(f"  2. Ejecuta: python generate_trident_nas.py")
     print(f"  3. Aplica los archivos generados en tu clúster:")
     print(f"     - kubectl apply -f backend_storage.yaml -n trident")

@@ -19,8 +19,13 @@ backend:
   credentials:
     name: trident-creds
   
-  # === CAMPOS OPCIONALES ===
+  # === CAMPOS OPCIONALES - Metadatos y configuración básica ===
   # name: backend-jc-san
+  # namespace: trident
+  # version: 1
+  # backendName: ""  # Si vacío, se genera automáticamente como: {storageDriverName}_{dataLIF}
+  # storageDriverName: ontap-san
+  # useREST: true
   # storagePrefix: trident
   
   # === PARÁMETROS CHAP ===
@@ -67,9 +72,13 @@ storageClass:
   # === CAMPOS OBLIGATORIOS ===
   name: rhoso-san
   
-  # === CAMPOS OPCIONALES ===
+  # === CAMPOS OPCIONALES - Configuración del StorageClass ===
   # isDefault: true
   # syncWave: "5"
+  # provisioner: csi.trident.netapp.io
+  # reclaimPolicy: Delete  # Opciones: Delete, Retain
+  # allowVolumeExpansion: true
+  # volumeBindingMode: Immediate  # Opciones: Immediate, WaitForFirstConsumer
   
   # === PARÁMETROS DEL STORAGE CLASS ===
   # parameters:
