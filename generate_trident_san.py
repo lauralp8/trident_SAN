@@ -410,6 +410,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     defaults = backend.pop('defaults')
     debug_trace_flags = backend.pop('debugTraceFlags')
     credentials_name = backend.pop('credentialsName')  # No incluir en el spec
+    backend_name = backend.pop('name')  # Extraer name para metadata, no debe estar en spec
     
     # Generar backendName automáticamente: ontap-san_<dataLIF>
     # Reemplazar puntos por guiones bajos para nombres válidos
@@ -420,7 +421,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
         'apiVersion': 'trident.netapp.io/v1',
         'kind': 'TridentBackendConfig',
         'metadata': {
-            'name': backend['name'],
+            'name': backend_name,
             'namespace': 'trident'
         },
         'spec': {

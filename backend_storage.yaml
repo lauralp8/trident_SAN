@@ -8,7 +8,6 @@ spec:
   backendName: ontap-san_192_168_205_203
   storageDriverName: ontap-san
   useREST: true
-  name: backend-jc-san
   managementLIF: 192.168.204.203
   dataLIF: 192.168.205.203
   svm: SVM
