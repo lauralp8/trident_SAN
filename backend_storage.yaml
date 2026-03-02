@@ -5,18 +5,14 @@ metadata:
   namespace: trident
 spec:
   version: 1
-  backendName: ontap-san_192_168_205_203
+  backendName: ontap-san_sansvm_demo_netapp_com
   storageDriverName: ontap-san
   useREST: true
-  managementLIF: 192.168.204.203
-  dataLIF: 192.168.205.203
-  svm: SVM
+  managementLIF: sansvm-mgmt.demo.netapp.com
+  dataLIF: sansvm.demo.netapp.com
+  svm: sansvm
   storagePrefix: trident
-  useCHAP: false
-  # chapInitiatorSecret: ''
-  # chapTargetInitiatorSecret: ''
-  # chapUserName: ''
-  # chapTargetUsername: ''
+  useCHAP: true
   # labels: ''
   # clientCertificate: ''
   # clientPrivateKey: ''

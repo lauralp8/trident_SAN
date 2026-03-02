@@ -412,6 +412,13 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     credentials_name = backend.pop('credentialsName')  # No incluir en el spec
     backend_name = backend.pop('name')  # Extraer name para metadata, no debe estar en spec
     
+    # IMPORTANTE: Los campos CHAP NO deben estar en el spec del backend
+    # Estos valores deben ir en el Secret, no aquí
+    backend.pop('chapInitiatorSecret', None)
+    backend.pop('chapTargetInitiatorSecret', None)
+    backend.pop('chapUserName', None)
+    backend.pop('chapTargetUsername', None)
+    
     # Generar backendName automáticamente: ontap-san_<dataLIF>
     # Reemplazar puntos por guiones bajos para nombres válidos
     data_lif_sanitized = backend['dataLIF'].replace('.', '_')
@@ -466,28 +473,39 @@ def create_storage_class_yaml(config: StorageClassConfig) -> Dict[str, Any]:
     }
 
 
-def create_secret_yaml(config: SecretConfig) -> Dict[str, Any]:
+def create_secret_yaml(config: SecretConfig, backend_config: BackendConfig = None) -> Dict[str, Any]:
     """
     Genera la estructura YAML del Secret con credenciales de NetApp.
     
     Crea un Secret Opaque de Kubernetes que almacena las credenciales
     que Trident usa para autenticarse contra el SVM de NetApp ONTAP.
+    Si se usa CHAP, también incluye los campos CHAP.
     
     Args:
         config: Configuración del Secret validada
+        backend_config: Configuración del backend (opcional, para incluir CHAP)
     
     Returns:
         Dict representando Secret listo para serializar a YAML
     """
+    secret_data = {
+        'username': config.username,
+        'password': config.password
+    }
+    
+    # Si se usa CHAP, agregar los campos CHAP al secret
+    if backend_config and backend_config.useCHAP:
+        secret_data['chapInitiatorSecret'] = backend_config.chapInitiatorSecret
+        secret_data['chapTargetInitiatorSecret'] = backend_config.chapTargetInitiatorSecret
+        secret_data['chapUsername'] = backend_config.chapUserName
+        secret_data['chapTargetUsername'] = backend_config.chapTargetUsername
+    
     return {
         'apiVersion': 'v1',
         'kind': 'Secret',
         'metadata': {'name': config.name},
         'type': 'Opaque',
-        'stringData': {
-            'username': config.username,
-            'password': config.password
-        }
+        'stringData': secret_data
     }
 
 
@@ -532,7 +550,7 @@ def generate_trident_files(
     # Generar recursos
     backend = create_backend_yaml(config.backend, config.secret.name)
     storage_class = create_storage_class_yaml(config.storageClass)
-    secret = create_secret_yaml(config.secret)
+    secret = create_secret_yaml(config.secret, config.backend)
     
     # Escribir backend y storage class
     with open(backend_file, 'w', encoding='utf-8') as f:
