@@ -13,9 +13,9 @@
 # BACKEND - Configuración del almacenamiento NetApp
 backend:
   # === CAMPOS OBLIGATORIOS ===
-  managementLIF: 192.168.204.203
-  dataLIF: 192.168.205.203
-  svm: SVM
+  managementLIF: sansvm-mgmt.demo.netapp.com
+  dataLIF: sansvm.demo.netapp.com
+  svm: sansvm
   credentials:
     name: trident-creds
   
