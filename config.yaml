@@ -1,5 +1,5 @@
 # ================================================================================
-# CONFIGURACIÓN TRIDENT NAS - Solo edita los valores necesarios
+# CONFIGURACIÓN TRIDENT SAN - Solo edita los valores necesarios
 # ================================================================================
 # 
 # INSTRUCCIONES:
@@ -16,23 +16,33 @@ backend:
   managementLIF: 192.168.204.203
   dataLIF: 192.168.205.203
   svm: SVM
+  credentials:
+    name: trident-creds
   
   # === CAMPOS OPCIONALES ===
-  # name: backend-jc-nas1200
+  # name: backend-jc-san
   # storagePrefix: trident
-  # credentialsName: trident-creds
-  # autoExportPolicy: false
-  # autoExportCIDRs:
-  #   - 0.0.0.0/0
-  #   - ::/0
+  
+  # === PARÁMETROS CHAP ===
+  # useCHAP: false
+  # chapInitiatorSecret: ""  # Obligatorio si useCHAP=true
+  # chapTargetInitiatorSecret: ""  # Obligatorio si useCHAP=true
+  # chapUserName: ""  # Obligatorio si useCHAP=true
+  # chapTargetUsername: ""  # Obligatorio si useCHAP=true
+  
+  # === OTROS PARÁMETROS ===
   # labels: ""
   # clientCertificate: ""
   # clientPrivateKey: ""
   # trustedCACertificate: ""
+  # aggregate: ""
   # limitAggregateUsage: ""
   # limitVolumeSize: ""
-  # nfsMountOptions: ""
-  # qtreesPerFlexvol: "200"
+  # limitVolumePoolSize: ""
+  # lunsPerFlexvol: "100"
+  # sanType: iscsi
+  # formatOptions: ""
+  # denyNewVolumePools: "false"
   
   # === DEBUG FLAGS ===
   # debugTraceFlags:
@@ -42,25 +52,20 @@ backend:
   # === DEFAULTS DE VOLÚMENES ===
   # defaults:
   #   spaceReserve: none
-  #   spaceAllocation: "false"
+  #   spaceAllocation: "true"
   #   snapshotPolicy: none
   #   snapshotReserve: "0"
-  #   unixPermissions: "755"
-  #   snapshotDir: "true"
-  #   exportPolicy: default
-  #   securityStyle: unix
   #   encryption: "false"
   #   qosPolicy: ""
   #   adaptiveQosPolicy: ""
+  #   tieringPolicy: none
+  #   luksEncryption: ""
   #   nameTemplate: ""
-  #   aggregate: ""
-  # credentials:
-  #   name: trident-creds
 
 # STORAGE CLASS - Nombre del storage class en Kubernetes/OpenShift
 storageClass:
   # === CAMPOS OBLIGATORIOS ===
-  name: rhoso-nas
+  name: rhoso-san
   
   # === CAMPOS OPCIONALES ===
   # isDefault: true
@@ -68,17 +73,7 @@ storageClass:
   
   # === PARÁMETROS DEL STORAGE CLASS ===
   # parameters:
-  #   backendType: ontap-nas
-  #   media: ssd
+  #   backendType: ontap-san
+  #   fsType: ext4
   #   provisioningType: thin
   #   snapshots: "true"
-
-# SECRET - Credenciales de acceso al SVM
-secret:
-  # === CAMPOS OBLIGATORIOS ===
-  username: edgevsadmin
-  password: Temporal01
-  
-  # === CAMPOS OPCIONALES ===
-  # name: trident-creds
-

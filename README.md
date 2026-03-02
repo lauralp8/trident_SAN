@@ -1,8 +1,8 @@
-# Generador de Configuración NetApp Trident NAS
+# Generador de Configuración NetApp Trident SAN
 
 ## Descripción General
 
-Herramienta Python para la generación automatizada de archivos de configuración YAML para NetApp Trident CSI en entornos OpenShift y Kubernetes. Este generador implementa validación automática, valores predeterminados optimizados y generación de configuraciones estandarizadas para backends de almacenamiento ONTAP NAS.
+Herramienta Python para la generación automatizada de archivos de configuración YAML para NetApp Trident CSI en entornos OpenShift y Kubernetes. Este generador implementa validación automática, valores predeterminados optimizados y generación de configuraciones estandarizadas para backends de almacenamiento ONTAP SAN.
 
 **Versión:** 2.0  
 **Autor:** PS NetApp
@@ -22,7 +22,10 @@ Herramienta Python para la generación automatizada de archivos de configuració
 
 ## Archivos Generados
 `backend_storage.yaml` = Configuración principal de TridentBackendConfig + StorageClass de Kubernetes |
-`secret.yaml` = Credenciales de acceso de Secret de Kubernetes con usuario y contraseña del SVM 
+`secret.yaml` = (Opcional) Credenciales de Secret de Kubernetes - Solo se genera si especificas username/password en config.yaml
+
+**IMPORTANTE:** Por seguridad, se recomienda crear el Secret directamente en Kubernetes en lugar de 
+especificar las credenciales en config.yaml. El backend solo necesita referenciar el nombre del Secret. 
 
 ---
 
@@ -54,20 +57,21 @@ Edite el archivo `config.yaml` con los siguientes campos obligatorios:
 backend:
   managementLIF: 192.168.204.203
   dataLIF: 192.168.205.203
-  svm: SVM-NAS-01
+  svm: SVM-SAN-01
+  credentials:
+    name: trident-creds
 
 storageClass:
-  name: ontap-nas-storage
-
-secret:
-  username: vsadmin
-  password: NetApp123
+  name: ontap-san-storage
 ```
+
+**NOTA:** Las credenciales (username/password) se configuran de forma SEPARADA en Kubernetes 
+mediante un Secret. El backend solo referencia el nombre del Secret mediante `credentials.name`.
 
 ### Paso 2: Ejecución del Generador
 
 ```bash
-python generate_trident_nas.py
+python generate_trident_san.py
 ```
 
 ### Paso 3: Verificación de Archivos
@@ -85,13 +89,15 @@ El script generará dos archivos en el directorio actual:
 Los siguientes campos **deben** estar presentes en `config.yaml`:
 Backend:
 - `managementLIF` Dirección IP de gestión del SVM 
-- `dataLIF` Dirección IP de datos NFS 
-- `svm` Nombre de la Storage Virtual Machine 
-Credentials:
-- `username` Usuario de acceso
-- `password` Contraseña del usuario 
+- `dataLIF` Dirección IP de datos iSCSI 
+- `svm` Nombre de la Storage Virtual Machine
+- `credentials.name` Nombre del Secret de Kubernetes que contiene las credenciales
 
-**NOTA:** El script fallará si alguno de estos campos está ausente o vacío.
+**NOTA:** El Secret debe existir en Kubernetes antes de desplegar el backend, o puede ser creado 
+después del backend pero antes de aprovisionar volúmenes.
+
+**IMPORTANTE:** Las credenciales (username/password) NO se incluyen en config.yaml por seguridad. 
+Se crean de forma independiente en Kubernetes como Secret.
 
 ---
 
@@ -101,30 +107,35 @@ Credentials:
 
 #### Parámetros de Conexión (Obligatorios)
 
-#### Parámetros de Conexión (Obligatorios)
-
 ```yaml
 backend:
   managementLIF: 192.168.204.203  # OBLIGATORIO
   dataLIF: 192.168.205.203        # OBLIGATORIO
-  svm: SVM-NAS-01                 # OBLIGATORIO
+  svm: SVM-SAN-01                 # OBLIGATORIO
+  credentials:                    # OBLIGATORIO
+    name: trident-creds           # Nombre del Secret en Kubernetes
 ```
 
 #### Parámetros Generales del Backend
 
 ```yaml
 backend:
-  name: backend-nas-01            # Opcional
+  name: backend-san-01            # Opcional
   storagePrefix: trident          # Opcional
   credentialsName: trident-creds  # Opcional
-  autoExportPolicy: false         # Opcional
-  autoExportCIDRs:                # Opcional
-    - 0.0.0.0/0
-    - ::/0
-  qtreesPerFlexvol: "200"         # Opcional
+  useCHAP: false                  # Opcional
+  chapInitiatorSecret: ""         # Obligatorio si useCHAP=true
+  chapTargetInitiatorSecret: ""   # Obligatorio si useCHAP=true
+  chapUserName: ""                # Obligatorio si useCHAP=true
+  chapTargetUsername: ""          # Obligatorio si useCHAP=true
+  aggregate: ""                   # Opcional
+  lunsPerFlexvol: "100"           # Opcional
+  sanType: iscsi                  # Opcional
+  formatOptions: ""               # Opcional
   limitAggregateUsage: ""         # Opcional
   limitVolumeSize: ""             # Opcional
-  nfsMountOptions: ""             # Opcional
+  limitVolumePoolSize: ""         # Opcional
+  denyNewVolumePools: "false"     # Opcional
   clientCertificate: ""           # Opcional - Validación SSL/TLS (NO es autenticación)
   clientPrivateKey: ""            # Opcional - Validación SSL/TLS (NO es autenticación)
   trustedCACertificate: ""        # Opcional - Validación SSL/TLS (NO es autenticación)
@@ -134,18 +145,15 @@ backend:
     method: false                 # Opcional
   defaults:
     spaceReserve: none
-    spaceAllocation: "false"
+    spaceAllocation: "true"
     snapshotPolicy: none
     snapshotReserve: "0"
-    unixPermissions: "755"
-    snapshotDir: "true"
-    exportPolicy: default
-    securityStyle: unix
     encryption: "false"
     qosPolicy: ""
     adaptiveQosPolicy: ""
+    tieringPolicy: none
+    luksEncryption: ""
     nameTemplate: ""
-    aggregate: ""
 ```
 
 ### Validación de Certificados SSL/TLS (backend)
@@ -165,25 +173,39 @@ backend:
 
 ```yaml
 storageClass:
-  name: ontap-nas-storage         # OBLIGATORIO (debe tener valor)
+  name: ontap-san-storage         # OBLIGATORIO (debe tener valor)
   isDefault: true                 # Opcional
   syncWave: "5"                   # Opcional
   parameters:
-    backendType: ontap-nas
-    media: ssd
+    backendType: ontap-san
+    fsType: ext4
     provisioningType: thin
     snapshots: "true"
 ```
 
 ## Configuración de Credenciales
 
-### Sección: secret
+### Creación del Secret en Kubernetes
+
+**Método Recomendado:** Crear el Secret directamente en Kubernetes sin guardarlo en archivos:
+
+```bash
+kubectl create secret generic trident-creds \
+  --from-literal=username=vsadmin \
+  --from-literal=password=NetApp123 \
+  -n trident
+```
+
+### Generación Automática (Opcional)
+
+Si prefieres que el script genere el archivo secret.yaml, puedes agregar una sección `secret` 
+en config.yaml (NO RECOMENDADO por temas de seguridad):
 
 ```yaml
 secret:
-  username: vsadmin               # OBLIGATORIO
-  password: NetApp123             # OBLIGATORIO
-  name: trident-creds             # Opcional
+  username: vsadmin
+  password: NetApp123
+  name: trident-creds  # Debe coincidir con backend.credentials.name
 ```
 
 ## Procedimiento de Desplie
@@ -192,7 +214,7 @@ secret:
 
 ```bash
 # Ejecutar el generador
-python generate_trident_nas.py
+python generate_trident_san.py
 ```
 
 Salida esperada:

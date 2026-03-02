@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║          GENERADOR OPTIMIZADO DE CONFIGURACIÓN TRIDENT NAS                   ║
+║          GENERADOR OPTIMIZADO DE CONFIGURACIÓN TRIDENT SAN                   ║
 ║                    para OpenShift / Kubernetes                               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 DESCRIPCIÓN:
     Generador Python moderno y optimizado para crear configuraciones YAML de
-    NetApp Trident NAS. Utiliza dataclasses, validación automática y arquitectura
+    NetApp Trident SAN. Utiliza dataclasses, validación automática y arquitectura
     modular para generar configuraciones seguras y estandarizadas.
 
 ARCHIVOS GENERADOS:
@@ -16,7 +16,7 @@ ARCHIVOS GENERADOS:
     - secret.yaml: Secret con credenciales de acceso a NetApp ONTAP
 
 USO:
-    python generate_trident_nas.py
+    python generate_trident_san.py
 
 CONFIGURACIÓN:
     Edita config.yaml con tus valores. Mínimo requerido:
@@ -54,18 +54,15 @@ class BackendDefaults:
     
     """
     spaceReserve: str = 'none'
-    spaceAllocation: str = 'false'
+    spaceAllocation: str = 'true'
     snapshotPolicy: str = 'none'
     snapshotReserve: str = '0'
-    unixPermissions: str = '755'
-    snapshotDir: str = 'true'
-    exportPolicy: str = 'default'
-    securityStyle: str = 'unix'
     encryption: str = 'false'
     qosPolicy: str = ''
     adaptiveQosPolicy: str = ''
+    tieringPolicy: str = 'none'
+    luksEncryption: str = ''
     nameTemplate: str = ''
-    aggregate: str = ''
 
 
 @dataclass
@@ -89,30 +86,37 @@ class BackendConfig:
     """
     Configuración completa del TridentBackendConfig.
     
-    Define cómo Trident se conecta al storage de NetApp ONTAP NAS.
+    Define cómo Trident se conecta al storage de NetApp ONTAP SAN.
     
     Campos obligatorios:
         - managementLIF: IP de gestión del SVM
-        - dataLIF: IP de datos para conexiones NFS
+        - dataLIF: IP de datos para conexiones iSCSI
         - svm: Storage Virtual Machine en ONTAP
 
     """
-    name: str = 'backend-jc-nas1200' 
+    name: str = 'backend-jc-san'
     managementLIF: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     dataLIF: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     svm: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     storagePrefix: str = 'trident'
-    autoExportPolicy: bool = False
-    autoExportCIDRs: list = field(default_factory=lambda: ['0.0.0.0/0', '::/0'])
     credentialsName: str = 'trident-creds'  # Nombre del secret de credenciales
+    useCHAP: bool = False
+    chapInitiatorSecret: str = ''
+    chapTargetInitiatorSecret: str = ''
+    chapUserName: str = ''
+    chapTargetUsername: str = ''
     labels: str = ''
     clientCertificate: str = ''
     clientPrivateKey: str = ''
     trustedCACertificate: str = ''
+    aggregate: str = ''
     limitAggregateUsage: str = ''
     limitVolumeSize: str = ''
-    nfsMountOptions: str = ''
-    qtreesPerFlexvol: str = '200'
+    lunsPerFlexvol: str = '100'
+    sanType: str = 'iscsi'
+    formatOptions: str = ''
+    limitVolumePoolSize: str = ''
+    denyNewVolumePools: str = 'false'
     debugTraceFlags: DebugTraceFlags = field(default_factory=DebugTraceFlags)
     defaults: BackendDefaults = field(default_factory=BackendDefaults)
 
@@ -123,13 +127,13 @@ class StorageClassParameters:
     Parámetros de selección de backend para el StorageClass.
     
     Args:
-        backendType: Tipo de driver de Trident (ontap-nas)
-        media: Tipo de disco (ssd, hdd)
+        backendType: Tipo de driver de Trident (ontap-san)
+        fsType: Sistema de archivos (ext4, xfs)
         provisioningType: Thin o thick provisioning
         snapshots: Soporte de snapshots de Kubernetes
     """
-    backendType: str = 'ontap-nas'
-    media: str = 'ssd'
+    backendType: str = 'ontap-san'
+    fsType: str = 'ext4'
     provisioningType: str = 'thin'
     snapshots: str = 'true'
 
@@ -145,7 +149,7 @@ class StorageClassConfig:
         syncWave: Orden de sincronización para ArgoCD (deployment automatizado)
         parameters: Criterios de selección de backend
     """
-    name: str = 'rhoso-nas'
+    name: str = 'rhoso-san'
     isDefault: bool = True
     syncWave: str = '5'
     parameters: StorageClassParameters = field(default_factory=StorageClassParameters)
@@ -156,29 +160,30 @@ class SecretConfig:
     """
     Credenciales de acceso al backend NetApp ONTAP.
     
-    Almacena las credenciales que Trident usa para autenticarse.
+    NOTA: Este Secret se crea de forma INDEPENDIENTE en Kubernetes para mayor seguridad.
+    El backend lo referencia mediante credentials.name.
     
-    Campos obligatorios:
-        - username: Usuario 
-        - password: Contraseña del usuario
+    Este dataclass es OPCIONAL - solo se usa si quieres que el script genere
+    el archivo secret.yaml automáticamente. Si ya tienes el Secret en Kubernetes,
+    no necesitas especificar username/password en config.yaml.
     
     Args:
         name: Nombre del Secret en Kubernetes (default: trident-creds)
-        username: Usuario - OBLIGATORIO
-        password: Contraseña del usuario - OBLIGATORIO
+        username: Usuario - OPCIONAL (solo para generar secret.yaml)
+        password: Contraseña del usuario - OPCIONAL (solo para generar secret.yaml)
     """
     name: str = 'trident-creds'
-    username: str = ''  # Campo obligatorio - debe especificarse en config.yaml
-    password: str = ''  # Campo obligatorio - debe especificarse en config.yaml
+    username: str = ''  # Opcional - solo para generación automática de secret.yaml
+    password: str = ''  # Opcional - solo para generación automática de secret.yaml
 
 
 @dataclass
 class TridentConfig:
     """
-    Configuración completa de Trident NAS - Contenedor principal.
+    Configuración completa de Trident SAN - Contenedor principal.
     
     Agrupa todas las configuraciones necesarias para desplegar
-    un backend de Trident NAS funcional en OpenShift/Kubernetes.
+    un backend de Trident SAN funcional en OpenShift/Kubernetes.
     
     Componentes:
         - backend: Cómo conectarse al storage NetApp
@@ -227,7 +232,8 @@ def load_config(config_file: str = "config.yaml") -> TridentConfig:
         2. Fusiona con valores por defecto
         3. Reconstruye objetos dataclass con validación de tipos
         4. Valida campos obligatorios (managementLIF, dataLIF, svm)
-        5. Maneja compatibilidad de formatos (credentials anidado vs simple)
+        5. Valida campos CHAP si useCHAP es true
+        6. Maneja compatibilidad de formatos (credentials anidado vs simple)
     
     Args:
         config_file: Ruta al archivo YAML de configuración
@@ -262,16 +268,20 @@ def load_config(config_file: str = "config.yaml") -> TridentConfig:
         'debugTraceFlags': debug_trace_flags
     }
     
+    # ===== COMPATIBILIDAD: Manejar credentials.name anidado =====
+    # Extraer credentials.name antes de crear BackendConfig
+    backend_config_dict = merged.get('backend', {})
+    if 'credentials' in backend_config_dict and isinstance(backend_config_dict['credentials'], dict):
+        credentials_name = backend_config_dict['credentials'].get('name', 'trident-creds')
+        backend_data['credentialsName'] = credentials_name
+    
+    # Quitar 'credentials' del backend_data para que no cause error en BackendConfig
+    backend_data.pop('credentials', None)
+    
     storage_class_params = StorageClassParameters(**merged.get('storageClass', {}).get('parameters', {}))
     storage_class_data = {**merged.get('storageClass', {}), 'parameters': storage_class_params}
     
     backend_config = BackendConfig(**backend_data)
-    
-    # ===== COMPATIBILIDAD: Manejar credentials.name anidado =====
-    backend_config_dict = merged.get('backend', {})
-    if 'credentials' in backend_config_dict and isinstance(backend_config_dict['credentials'], dict):
-        credentials_name = backend_config_dict['credentials'].get('name', 'trident-creds')
-        backend_config.credentialsName = credentials_name
     
     # Si hay secret.name definido, usarlo (tiene prioridad)
     secret_data = merged.get('secret', {})
@@ -289,10 +299,19 @@ def load_config(config_file: str = "config.yaml") -> TridentConfig:
         errors.append("  - backend.dataLIF")
     if not backend_config.svm:
         errors.append("  - backend.svm")
-    if not secret_config.username:
-        errors.append("  - secret.username")
-    if not secret_config.password:
-        errors.append("  - secret.password")
+    if not backend_config.credentialsName:
+        errors.append("  - backend.credentials.name")
+    
+    # Validar campos CHAP si useCHAP es true
+    if backend_config.useCHAP:
+        if not backend_config.chapInitiatorSecret:
+            errors.append("  - backend.chapInitiatorSecret (obligatorio cuando useCHAP=true)")
+        if not backend_config.chapTargetInitiatorSecret:
+            errors.append("  - backend.chapTargetInitiatorSecret (obligatorio cuando useCHAP=true)")
+        if not backend_config.chapUserName:
+            errors.append("  - backend.chapUserName (obligatorio cuando useCHAP=true)")
+        if not backend_config.chapTargetUsername:
+            errors.append("  - backend.chapTargetUsername (obligatorio cuando useCHAP=true)")
     
     if errors:
         raise ValueError(
@@ -376,7 +395,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     el recurso Kubernetes TridentBackendConfig. Incluye lógica especial:
     
     - Auto-generación de backendName basado en dataLIF sanitizada
-    - Inyección de campos estáticos (storageDriverName, nasType, useREST)
+    - Inyección de campos estáticos (storageDriverName, sanType, useREST)
     - Inclusión de defaults y debugTraceFlags como subsecciones
     
     Args:
@@ -392,10 +411,10 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     debug_trace_flags = backend.pop('debugTraceFlags')
     credentials_name = backend.pop('credentialsName')  # No incluir en el spec
     
-    # Generar backendName automáticamente: ontap-nas_<dataLIF>
+    # Generar backendName automáticamente: ontap-san_<dataLIF>
     # Reemplazar puntos por guiones bajos para nombres válidos
     data_lif_sanitized = backend['dataLIF'].replace('.', '_')
-    auto_backend_name = f"ontap-nas_{data_lif_sanitized}"
+    auto_backend_name = f"ontap-san_{data_lif_sanitized}"
     
     return {
         'apiVersion': 'trident.netapp.io/v1',
@@ -404,8 +423,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
         'spec': {
             'version': 1,
             'backendName': auto_backend_name,
-            'storageDriverName': 'ontap-nas',
-            'nasType': 'nfs',
+            'storageDriverName': 'ontap-san',
             'useREST': True,
             **backend,
             'defaults': defaults,
@@ -479,7 +497,7 @@ def generate_trident_files(
     secret_file: str = "secret.yaml"
 ) -> None:
     """
-    Orquesta la generación completa de archivos YAML para Trident NAS.
+    Orquesta la generación completa de archivos YAML para Trident SAN.
     
     Flujo de ejecución:
         1. Genera diccionario de TridentBackendConfig
@@ -522,11 +540,15 @@ def generate_trident_files(
     comment_empty_fields(backend_file)
     print(f"✓ Archivo generado: {backend_file}")
     
-    # Escribir secret
-    with open(secret_file, 'w', encoding='utf-8') as f:
-        yaml.dump(secret, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    # Escribir secret solo si hay username y password especificados
+    if config.secret.username and config.secret.password:
+        with open(secret_file, 'w', encoding='utf-8') as f:
+            yaml.dump(secret, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        print(f"✓ Archivo generado: {secret_file}")
+    else:
+        print(f"⚠ Secret no generado (no hay credenciales en config.yaml)")
+        print(f"  El backend usará el Secret existente en Kubernetes: '{config.secret.name}'")
     
-    print(f"✓ Archivo generado: {secret_file}")
     print("\n¡Archivos YAML generados exitosamente!")
 
 
@@ -573,7 +595,7 @@ def main(config_file: str = None) -> None:
     
     print(f"\n Para personalizar:")
     print(f"  1. Edita {config_file}")
-    print(f"  2. Ejecuta: python generate_trident_nas.py")
+    print(f"  2. Ejecuta: python generate_trident_san.py")
 
 
 if __name__ == "__main__":
