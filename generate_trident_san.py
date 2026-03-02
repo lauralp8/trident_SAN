@@ -419,7 +419,10 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     return {
         'apiVersion': 'trident.netapp.io/v1',
         'kind': 'TridentBackendConfig',
-        'metadata': {'name': backend['name']},
+        'metadata': {
+            'name': backend['name'],
+            'namespace': 'trident'
+        },
         'spec': {
             'version': 1,
             'backendName': auto_backend_name,
