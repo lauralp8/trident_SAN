@@ -27,7 +27,6 @@ backend:
   storageDriverName: ontap-san
   useREST: true
   storagePrefix: lab
-  
   # === OTROS PARÁMETROS ===
   # Labels deben ser un diccionario de pares clave-valor (mapa string:string)
   # Ejemplo:
@@ -46,7 +45,7 @@ backend:
   limitVolumeSize: "500Gi"
   # limitVolumePoolSize: ""
   lunsPerFlexvol: "100"
-  sanType: fcp
+  sanType: iscsi
   # formatOptions: ""
   denyNewVolumePools: "false"
   
