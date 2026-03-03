@@ -23,7 +23,7 @@ backend:
   name: backend-ontap-san-lab
   namespace: trident
   version: 1
-  backendName: ontap-san-lab-backend
+  backendName: backend-san
   storageDriverName: ontap-san
   useREST: true
   storagePrefix: lab
