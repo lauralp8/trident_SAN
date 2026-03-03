@@ -8,7 +8,7 @@ spec:
   backendName: backend-san
   storageDriverName: ontap-san
   useREST: true
-  managementLIF: 192.168.0.135
+  managementLIF: sansvm-mgmt.demo.netapp.com
   dataLIF: 192.168.0.136
   svm: svm_iscsi
   storagePrefix: lab
@@ -32,7 +32,7 @@ spec:
     # qosPolicy: ''
     # adaptiveQosPolicy: ''
     tieringPolicy: none
-    # luksEncryption: ''
+    # luksEncryption: ''cat
     # nameTemplate: ''
   debugTraceFlags:
     api: false
