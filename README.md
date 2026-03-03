@@ -21,7 +21,7 @@ Herramienta Python para la generación automatizada de archivos de configuració
 ---
 
 ## Archivos Generados
-`backend_storage.yaml` = Configuración principal de TridentBackendConfig + StorageClass de Kubernetes |
+`backend_storage_san.yaml` = Configuración principal de TridentBackendConfig + StorageClass de Kubernetes |
 `secret.yaml` = (Opcional) Credenciales de Secret de Kubernetes - Solo se genera si especificas username/password en config.yaml
 
 **IMPORTANTE:** Por seguridad, se recomienda crear el Secret directamente en Kubernetes en lugar de 
@@ -77,7 +77,7 @@ python generate_trident_san.py
 ### Paso 3: Verificación de Archivos
 
 El script generará dos archivos en el directorio actual:
-- `backend_storage.yaml`
+- `backend_storage_san.yaml`
 - `secret.yaml`
 
 ---
@@ -220,7 +220,7 @@ python generate_trident_san.py
 Salida esperada:
 ```
 Usando configuración: config.yaml
-✓ Archivo generado: backend_storage.yaml
+✓ Archivo generado: backend_storage_san.yaml
 ✓ Archivo generado: secret.yaml
 
 ¡Archivos YAML generados exitosamente!
@@ -236,7 +236,7 @@ Revisar los archivos generados antes de aplicarlos:
 
 ```bash
 # Ver contenido del backend
-cat backend_storage.yaml
+cat backend_storage_san.yaml
 
 # Ver contenido del secret
 cat secret.yaml
