@@ -579,19 +579,7 @@ def generate_trident_files(
     
     # Comentar campos vacíos
     comment_empty_fields(backend_file)
-    print(f"✓ Archivo generado: {backend_file}")
-    
-    # Escribir secret solo si hay username y password especificados
-    if config.secret.username and config.secret.password:
-        with open(secret_file, 'w', encoding='utf-8') as f:
-            yaml.dump(secret, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-        print(f"✓ Archivo generado: {secret_file}")
-    else:
-        print(f"⚠ Secret no generado (no hay credenciales en config.yaml)")
-        print(f"  El backend usará el Secret existente en Kubernetes: '{config.secret.name}'")
-    
-    print("\nArchivo backend_storage.yaml correctamente generado para Trident SAN.")
-
+    print(f"Archivo generado: {backend_file}")
 
 def main(config_file: str = None) -> None:
     """
