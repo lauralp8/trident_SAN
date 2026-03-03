@@ -13,20 +13,20 @@
 # BACKEND - Configuración del almacenamiento NetApp
 backend:
   # === CAMPOS OBLIGATORIOS ===
-  managementLIF: sansvm-mgmt.demo.netapp.com
-  dataLIF: sansvm.demo.netapp.com
-  svm: sansvm
+  managementLIF: 192.168.0.135
+  dataLIF: 192.168.0.136
+  svm: svm_iscsi
   credentials:
     name: trident-creds
   
   # === CAMPOS OPCIONALES - Metadatos y configuración básica ===
-  # name: backend-jc-san
-  # namespace: trident
-  # version: 1
-  # backendName: ""  # Si vacío, se genera automáticamente como: {storageDriverName}_{dataLIF}
-  # storageDriverName: ontap-san
-  # useREST: true
-  # storagePrefix: trident
+  name: backend-ontap-san-lab
+  namespace: trident
+  version: 1
+  backendName: ontap-san-lab-backend
+  storageDriverName: ontap-san
+  useREST: true
+  storagePrefix: lab
   
   # === PARÁMETROS CHAP ===
   # Habilita la autenticación CHAP bidireccional para iSCSI.
@@ -41,57 +41,57 @@ backend:
   #   - chapTargetUsername
   
   # === OTROS PARÁMETROS ===
-  # labels: ""
+  labels: "environment=lab,tier=gold"
   # Los siguientes campos de certificados se definen en secret.yaml (forbidden attributes):
   # clientCertificate: ""         # Certificado del cliente (Base64) - va en secret.yaml
   # clientPrivateKey: ""          # Clave privada del cliente (Base64) - va en secret.yaml
   # trustedCACertificate: ""      # Certificado CA de confianza (Base64) - va en secret.yaml
-  # aggregate: ""
-  # limitAggregateUsage: ""
-  # limitVolumeSize: ""
+  aggregate: aggr1
+  limitAggregateUsage: "80"
+  limitVolumeSize: "500Gi"
   # limitVolumePoolSize: ""
-  # lunsPerFlexvol: "100"
-  # sanType: iscsi
+  lunsPerFlexvol: "100"
+  sanType: iscsi
   # formatOptions: ""
-  # denyNewVolumePools: "false"
+  denyNewVolumePools: "false"
   
   # === DEBUG FLAGS ===
-  # debugTraceFlags:
-  #   api: false
-  #   method: false
+  debugTraceFlags:
+    api: false
+    method: false
   
   # === DEFAULTS DE VOLÚMENES ===
-  # defaults:
-  #   spaceReserve: none
-  #   spaceAllocation: "true"
-  #   snapshotPolicy: none
-  #   snapshotReserve: "0"
-  #   encryption: "false"
-  #   qosPolicy: ""
-  #   adaptiveQosPolicy: ""
-  #   tieringPolicy: none
-  #   luksEncryption: ""
-  #   nameTemplate: ""
+  defaults:
+    spaceReserve: none
+    spaceAllocation: "true"
+    snapshotPolicy: default
+    snapshotReserve: none
+    encryption: "false"
+    qosPolicy: ""
+    adaptiveQosPolicy: ""
+    tieringPolicy: none
+    luksEncryption: ""
+    nameTemplate: ""
 
 # STORAGE CLASS - Nombre del storage class en Kubernetes/OpenShift
 storageClass:
   # === CAMPOS OBLIGATORIOS ===
-  name: rhoso-san
+  name: ontap-san-lab
   
   # === CAMPOS OPCIONALES - Configuración del StorageClass ===
-  # isDefault: true
-  # syncWave: "5"
-  # provisioner: csi.trident.netapp.io
-  # reclaimPolicy: Delete  # Opciones: Delete, Retain
-  # allowVolumeExpansion: true
-  # volumeBindingMode: Immediate  # Opciones: Immediate, WaitForFirstConsumer
+  isDefault: false
+  syncWave: "5"
+  provisioner: csi.trident.netapp.io
+  reclaimPolicy: Delete  # Opciones: Delete, Retain
+  allowVolumeExpansion: true
+  volumeBindingMode: Immediate  # Opciones: Immediate, WaitForFirstConsumer
   
   # === PARÁMETROS DEL STORAGE CLASS ===
-  # parameters:
-  #   backendType: ontap-san
-  #   fsType: ext4
-  #   provisioningType: thin
-  #   snapshots: "true"
+  parameters:
+    backendType: ontap-san
+    fsType: ext4
+    provisioningType: thin
+    snapshots: "true"
 # ================================================================================
 # SECRET - Credenciales de acceso y CHAP
 # ================================================================================
