@@ -26,7 +26,7 @@ spec:
     spaceReserve: none
     spaceAllocation: 'true'
     snapshotPolicy: none
-    snapshotReserve: '0'
+    snapshotReserve: none
     encryption: 'false'
     # qosPolicy: ''
     # adaptiveQosPolicy: ''

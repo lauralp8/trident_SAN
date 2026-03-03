@@ -1,1 +1,11 @@
-pyyaml>=6.0
+# Dependencias necesarias para ejecutar el script generate_trident_san.py
+
+# Versión de Python requerida: 3.9
+# YAML parsing
+PyYAML==6.0
+
+# Validación de tipos y utilidades
+dataclasses-json==0.5.8
+
+# Opcional: Herramientas de desarrollo
+mypy==1.5.1
