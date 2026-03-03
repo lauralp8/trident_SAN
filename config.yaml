@@ -20,7 +20,7 @@ backend:
     name: trident-creds
   
   # === CAMPOS OPCIONALES - Metadatos y configuración básica ===
-  name: backend-ontap-san-lab
+  name: backend-ontap
   namespace: trident
   version: 1
   backendName: backend-san
