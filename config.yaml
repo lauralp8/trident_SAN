@@ -33,7 +33,7 @@ backend:
   # IMPORTANTE: En versiones recientes de Trident con TridentBackendConfig,
   # los valores CHAP NO se definen aquí, van en secret.yaml
   # Solo useCHAP se define en el backend para habilitar la funcionalidad.
-  useCHAP: true
+  # useCHAP: false
   # Los siguientes campos CHAP se definen en secret.yaml:
   #   - chapInitiatorSecret
   #   - chapTargetInitiatorSecret  

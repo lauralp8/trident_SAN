@@ -105,11 +105,11 @@ class BackendConfig:
     svm: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     storagePrefix: str = 'trident'
     credentialsName: str = 'trident-creds'  # Nombre del secret de credenciales
-    useCHAP: bool = False
-    chapInitiatorSecret: str = ''
-    chapTargetInitiatorSecret: str = ''
-    chapUserName: str = ''
-    chapTargetUsername: str = ''
+    # useCHAP: bool = False
+    # chapInitiatorSecret: str = ''
+    # chapTargetInitiatorSecret: str = ''
+    # chapUserName: str = ''
+    # chapTargetUsername: str = ''
     labels: str = ''
     clientCertificate: str = ''
     clientPrivateKey: str = ''
@@ -437,10 +437,10 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     
     # IMPORTANTE: Con TridentBackendConfig, los campos CHAP y de certificados son "forbidden attributes"
     # en el backend spec. Deben ir en el Secret, no aquí.
-    backend.pop('chapInitiatorSecret', None)
-    backend.pop('chapTargetInitiatorSecret', None)
-    backend.pop('chapUserName', None)
-    backend.pop('chapTargetUsername', None)
+    # backend.pop('chapInitiatorSecret', None)
+    # backend.pop('chapTargetInitiatorSecret', None)
+    # backend.pop('chapUserName', None)
+    # backend.pop('chapTargetUsername', None)
     backend.pop('clientCertificate', None)
     backend.pop('clientPrivateKey', None)
     backend.pop('trustedCACertificate', None)
@@ -522,7 +522,7 @@ def create_secret_yaml(config: SecretConfig, backend_config: BackendConfig = Non
         'username': config.username,
         'password': config.password
     }
-    
+
     # Si se usa CHAP, agregar los campos CHAP al secret
     if backend_config and backend_config.useCHAP:
         secret_data['chapInitiatorSecret'] = backend_config.chapInitiatorSecret
