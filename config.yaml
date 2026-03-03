@@ -29,6 +29,11 @@ backend:
   storagePrefix: lab
   
   # === OTROS PARÁMETROS ===
+  # Labels deben ser un diccionario de pares clave-valor (mapa string:string)
+  # Ejemplo:
+  # labels:
+  #   environment: production
+  #   tier: gold
   labels: 
       backend: us-east1
       environment: test

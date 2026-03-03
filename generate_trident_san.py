@@ -105,7 +105,7 @@ class BackendConfig:
     svm: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     storagePrefix: str = 'trident'
     credentialsName: str = 'trident-creds'  # Nombre del secret de credenciales
-    labels: str = ''
+    labels: Dict[str, str] = field(default_factory=dict)
     clientCertificate: str = ''
     clientPrivateKey: str = ''
     trustedCACertificate: str = ''

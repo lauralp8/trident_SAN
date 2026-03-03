@@ -1,30 +1,32 @@
 apiVersion: trident.netapp.io/v1
 kind: TridentBackendConfig
 metadata:
-  name: backend-jc-san
+  name: backend-ontap-san-lab
   namespace: trident
 spec:
   version: 1
-  backendName: ontap-san_sansvm_demo_netapp_com
+  backendName: ontap-san-lab-backend
   storageDriverName: ontap-san
   useREST: true
-  managementLIF: sansvm-mgmt.demo.netapp.com
-  dataLIF: sansvm.demo.netapp.com
-  svm: sansvm
-  storagePrefix: trident
-  # labels: ''
-  # aggregate: ''
-  # limitAggregateUsage: ''
-  # limitVolumeSize: ''
+  managementLIF: 192.168.0.135
+  dataLIF: 192.168.0.136
+  svm: svm_iscsi
+  storagePrefix: lab
+  labels:
+    backend: us-east1
+    environment: test
+  aggregate: aggr1
+  limitAggregateUsage: '80'
+  limitVolumeSize: 500Gi
   lunsPerFlexvol: '100'
-  sanType: iscsi
+  sanType: fcp
   # formatOptions: ''
   # limitVolumePoolSize: ''
   denyNewVolumePools: 'false'
   defaults:
     spaceReserve: none
     spaceAllocation: 'true'
-    snapshotPolicy: none
+    snapshotPolicy: default
     snapshotReserve: none
     encryption: 'false'
     # qosPolicy: ''
@@ -43,9 +45,9 @@ spec:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: rhoso-san
+  name: ontap-san-lab
   annotations:
-    storageclass.kubernetes.io/is-default-class: 'true'
+    storageclass.kubernetes.io/is-default-class: 'false'
     argocd.argoproj.io/sync-wave: '5'
 provisioner: csi.trident.netapp.io
 reclaimPolicy: Delete
