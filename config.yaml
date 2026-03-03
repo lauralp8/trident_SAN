@@ -29,6 +29,9 @@ backend:
   # storagePrefix: trident
   
   # === PARÁMETROS CHAP ===
+  # Habilita la autenticación CHAP bidireccional para iSCSI.
+  # IMPORTANTE: Según la documentación de NetApp Trident, los valores CHAP
+  # se definen DIRECTAMENTE aquí en el backend spec, NO en secret.yaml.
   useCHAP: true
   chapInitiatorSecret: "cl9qxWfnUFoinvk"
   chapTargetInitiatorSecret: "rwbwtuigONgbw"
@@ -86,3 +89,14 @@ storageClass:
   #   fsType: ext4
   #   provisioningType: thin
   #   snapshots: "true"
+# ================================================================================
+# SECRET - Credenciales de acceso al SVM
+# ================================================================================
+# El secret de Kubernetes contiene SOLO las credenciales de acceso al SVM:
+#   - username: Usuario administrador del SVM (ej: vsadmin)
+#   - password: Contraseña del usuario
+#
+# NOTA: Los campos CHAP NO van en el secret, van directamente en el backend
+# config (arriba) según la documentación oficial de NetApp Trident.
+# El backend referencia el secret mediante backend.credentials.name
+# ================================================================================
