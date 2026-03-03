@@ -105,11 +105,6 @@ class BackendConfig:
     svm: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     storagePrefix: str = 'trident'
     credentialsName: str = 'trident-creds'  # Nombre del secret de credenciales
-    # useCHAP: bool = False
-    # chapInitiatorSecret: str = ''
-    # chapTargetInitiatorSecret: str = ''
-    # chapUserName: str = ''
-    # chapTargetUsername: str = ''
     labels: str = ''
     clientCertificate: str = ''
     clientPrivateKey: str = ''
@@ -118,7 +113,7 @@ class BackendConfig:
     limitAggregateUsage: str = ''
     limitVolumeSize: str = ''
     lunsPerFlexvol: str = '100'
-    sanType: str = 'iscsi'
+    sanType: str = 'fcp'
     formatOptions: str = ''
     limitVolumePoolSize: str = ''
     denyNewVolumePools: str = 'false'
@@ -173,11 +168,11 @@ class SecretConfig:
     """
     Credenciales de acceso al backend NetApp ONTAP.
     
-    IMPORTANTE: Con TridentBackendConfig, el Secret contiene tanto las credenciales
-    del SVM (username/password) como los campos CHAP (si useCHAP=true) y los campos
-    de certificados (si se usa autenticación por certificados).
+    IMPORTANTE: Con TridentBackendConfig, el Secret contiene las credenciales
+    del SVM (username/password) y los campos de certificados (si se usa 
+    autenticación por certificados).
     
-    En versiones recientes de Trident, los campos CHAP y de certificados son 
+    En versiones recientes de Trident, los campos de certificados son 
     "forbidden attributes" en el backend spec y DEBEN ir en el Secret.
     
     El backend referencia el Secret mediante credentials.name.
@@ -192,8 +187,6 @@ class SecretConfig:
         password: Contraseña del usuario - OPCIONAL (solo para generar secret.yaml)
     
     Campos que se agregan automáticamente al secret desde backend config:
-        - chapInitiatorSecret, chapTargetInitiatorSecret (si useCHAP=true)
-        - chapUsername, chapTargetUsername (si useCHAP=true)
         - clientCertificate, clientPrivateKey, trustedCACertificate (si se definen)
     """
     name: str = 'trident-creds'
@@ -256,8 +249,7 @@ def load_config(config_file: str = "config.yaml") -> TridentConfig:
         2. Fusiona con valores por defecto
         3. Reconstruye objetos dataclass con validación de tipos
         4. Valida campos obligatorios (managementLIF, dataLIF, svm)
-        5. Valida campos CHAP si useCHAP es true
-        6. Maneja compatibilidad de formatos (credentials anidado vs simple)
+        5. Maneja compatibilidad de formatos (credentials anidado vs simple)
     
     Args:
         config_file: Ruta al archivo YAML de configuración
@@ -325,10 +317,6 @@ def load_config(config_file: str = "config.yaml") -> TridentConfig:
         errors.append("  - backend.svm")
     if not backend_config.credentialsName:
         errors.append("  - backend.credentials.name")
-    
-    # NOTA: Los campos CHAP no se validan aquí porque se definen en secret.yaml
-    # En TridentBackendConfig, los campos CHAP son "forbidden attributes" en el backend spec.
-    # Solo useCHAP se define en el backend, los valores van en el Secret.
     
     if errors:
         raise ValueError(
@@ -413,7 +401,6 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     
     - Auto-generación de backendName basado en dataLIF sanitizada (si no se especifica)
     - Uso de campos configurables (storageDriverName, sanType, useREST, etc.)
-    - Exclusión de campos CHAP del spec (van en el Secret)
     - Inclusión de defaults y debugTraceFlags como subsecciones
     
     Args:
@@ -435,12 +422,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     storage_driver_name = backend.pop('storageDriverName')  # Extraer storageDriverName
     use_rest = backend.pop('useREST')  # Extraer useREST
     
-    # IMPORTANTE: Con TridentBackendConfig, los campos CHAP y de certificados son "forbidden attributes"
-    # en el backend spec. Deben ir en el Secret, no aquí.
-    # backend.pop('chapInitiatorSecret', None)
-    # backend.pop('chapTargetInitiatorSecret', None)
-    # backend.pop('chapUserName', None)
-    # backend.pop('chapTargetUsername', None)
+    # Remover campos de certificados (son forbidden attributes en el backend spec)
     backend.pop('clientCertificate', None)
     backend.pop('clientPrivateKey', None)
     backend.pop('trustedCACertificate', None)
@@ -507,13 +489,9 @@ def create_secret_yaml(config: SecretConfig, backend_config: BackendConfig = Non
     Crea un Secret Opaque de Kubernetes que almacena las credenciales
     que Trident usa para autenticarse contra el SVM de NetApp ONTAP.
     
-    IMPORTANTE: Con TridentBackendConfig, si useCHAP=true, los campos CHAP
-    también van en el Secret (son "forbidden attributes" en el backend spec).
-    Lo mismo aplica para los campos de certificados.
-    
     Args:
         config: Configuración del Secret validada
-        backend_config: Configuración del backend (opcional, para incluir CHAP y certificados)
+        backend_config: Configuración del backend (opcional, para incluir certificados)
     
     Returns:
         Dict representando Secret listo para serializar a YAML
@@ -522,15 +500,8 @@ def create_secret_yaml(config: SecretConfig, backend_config: BackendConfig = Non
         'username': config.username,
         'password': config.password
     }
-
-    # Si se usa CHAP, agregar los campos CHAP al secret
-    if backend_config and backend_config.useCHAP:
-        secret_data['chapInitiatorSecret'] = backend_config.chapInitiatorSecret
-        secret_data['chapTargetInitiatorSecret'] = backend_config.chapTargetInitiatorSecret
-        secret_data['chapUsername'] = backend_config.chapUserName
-        secret_data['chapTargetUsername'] = backend_config.chapTargetUsername
     
-    # Si se usan certificados, agregarlos al secret (también son forbidden attributes)
+    # Si se usan certificados, agregarlos al secret (son forbidden attributes)
     if backend_config:
         if backend_config.clientCertificate:
             secret_data['clientCertificate'] = backend_config.clientCertificate

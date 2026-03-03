@@ -12,7 +12,6 @@ spec:
   dataLIF: sansvm.demo.netapp.com
   svm: sansvm
   storagePrefix: trident
-  useCHAP: true
   # labels: ''
   # aggregate: ''
   # limitAggregateUsage: ''

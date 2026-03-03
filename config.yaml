@@ -28,20 +28,10 @@ backend:
   useREST: true
   storagePrefix: lab
   
-  # === PARÁMETROS CHAP ===
-  # Habilita la autenticación CHAP bidireccional para iSCSI.
-  # IMPORTANTE: En versiones recientes de Trident con TridentBackendConfig,
-  # los valores CHAP NO se definen aquí, van en secret.yaml
-  # Solo useCHAP se define en el backend para habilitar la funcionalidad.
-  # useCHAP: false
-  # Los siguientes campos CHAP se definen en secret.yaml:
-  #   - chapInitiatorSecret
-  #   - chapTargetInitiatorSecret  
-  #   - chapUsername
-  #   - chapTargetUsername
-  
   # === OTROS PARÁMETROS ===
-  labels: "environment=lab,tier=gold"
+  labels: 
+      backend: us-east1
+      environment: test
   # Los siguientes campos de certificados se definen en secret.yaml (forbidden attributes):
   # clientCertificate: ""         # Certificado del cliente (Base64) - va en secret.yaml
   # clientPrivateKey: ""          # Clave privada del cliente (Base64) - va en secret.yaml
@@ -51,7 +41,7 @@ backend:
   limitVolumeSize: "500Gi"
   # limitVolumePoolSize: ""
   lunsPerFlexvol: "100"
-  sanType: iscsi
+  sanType: fcp
   # formatOptions: ""
   denyNewVolumePools: "false"
   
@@ -92,21 +82,8 @@ storageClass:
     fsType: ext4
     provisioningType: thin
     snapshots: "true"
-# ================================================================================
-# SECRET - Credenciales de acceso y CHAP
-# ================================================================================
-# El secret de Kubernetes contiene:
-#   - username: Usuario administrador del SVM (ej: vsadmin)
-#   - password: Contraseña del usuario
-#   - chapInitiatorSecret: Secret del iniciador (si useCHAP=true)
-#   - chapTargetInitiatorSecret: Secret del target iniciador (si useCHAP=true)
-#   - chapUsername: Usuario CHAP (si useCHAP=true)
-#   - chapTargetUsername: Usuario CHAP del target (si useCHAP=true)
-#   - clientCertificate: Certificado del cliente Base64 (si se usa auth por cert)
-#   - clientPrivateKey: Clave privada del cliente Base64 (si se usa auth por cert)
-#   - trustedCACertificate: Certificado CA Base64 (si se usa auth por cert)
-#
-# NOTA: Con TridentBackendConfig, los campos CHAP y de certificados van en el secret.
-# Son "forbidden attributes" en el backend spec.
-# El backend solo tiene useCHAP=true y referencia el secret mediante credentials.name
-# ================================================================================
+
+# Descomentar y rellenar si usas autenticación por certificados:
+# clientCertificate: ""
+# clientPrivateKey: ""
+# trustedCACertificate: ""
