@@ -13,14 +13,7 @@ spec:
   svm: sansvm
   storagePrefix: trident
   useCHAP: true
-  chapInitiatorSecret: cl9qxWfnUFoinvk
-  chapTargetInitiatorSecret: rwbwtuigONgbw
-  chapUserName: uh2a1io325bFFILn
-  chapTargetUsername: iJF4sgjrnwOwQ
   # labels: ''
-  # clientCertificate: ''
-  # clientPrivateKey: ''
-  # trustedCACertificate: ''
   # aggregate: ''
   # limitAggregateUsage: ''
   # limitVolumeSize: ''

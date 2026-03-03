@@ -56,7 +56,7 @@ class BackendDefaults:
     spaceReserve: str = 'none'
     spaceAllocation: str = 'true'
     snapshotPolicy: str = 'none'
-    snapshotReserve: str = '0'
+    snapshotReserve: str = 'none'
     encryption: str = 'false'
     qosPolicy: str = ''
     adaptiveQosPolicy: str = ''
@@ -174,10 +174,11 @@ class SecretConfig:
     Credenciales de acceso al backend NetApp ONTAP.
     
     IMPORTANTE: Con TridentBackendConfig, el Secret contiene tanto las credenciales
-    del SVM (username/password) como los campos CHAP si useCHAP=true.
+    del SVM (username/password) como los campos CHAP (si useCHAP=true) y los campos
+    de certificados (si se usa autenticación por certificados).
     
-    En versiones recientes de Trident, los campos CHAP son "forbidden attributes"
-    en el backend spec y DEBEN ir en el Secret.
+    En versiones recientes de Trident, los campos CHAP y de certificados son 
+    "forbidden attributes" en el backend spec y DEBEN ir en el Secret.
     
     El backend referencia el Secret mediante credentials.name.
     
@@ -190,11 +191,10 @@ class SecretConfig:
         username: Usuario del SVM - OPCIONAL (solo para generar secret.yaml)
         password: Contraseña del usuario - OPCIONAL (solo para generar secret.yaml)
     
-    Campos CHAP (se agregan automáticamente al secret si useCHAP=true en backend):
-        - chapInitiatorSecret
-        - chapTargetInitiatorSecret
-        - chapUsername
-        - chapTargetUsername
+    Campos que se agregan automáticamente al secret desde backend config:
+        - chapInitiatorSecret, chapTargetInitiatorSecret (si useCHAP=true)
+        - chapUsername, chapTargetUsername (si useCHAP=true)
+        - clientCertificate, clientPrivateKey, trustedCACertificate (si se definen)
     """
     name: str = 'trident-creds'
     username: str = ''  # Opcional - solo para generación automática de secret.yaml
@@ -435,12 +435,15 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     storage_driver_name = backend.pop('storageDriverName')  # Extraer storageDriverName
     use_rest = backend.pop('useREST')  # Extraer useREST
     
-    # IMPORTANTE: Con TridentBackendConfig, los campos CHAP son "forbidden attributes"
+    # IMPORTANTE: Con TridentBackendConfig, los campos CHAP y de certificados son "forbidden attributes"
     # en el backend spec. Deben ir en el Secret, no aquí.
     backend.pop('chapInitiatorSecret', None)
     backend.pop('chapTargetInitiatorSecret', None)
     backend.pop('chapUserName', None)
     backend.pop('chapTargetUsername', None)
+    backend.pop('clientCertificate', None)
+    backend.pop('clientPrivateKey', None)
+    backend.pop('trustedCACertificate', None)
     
     # Generar backendName automáticamente solo si no se especificó: ontap-san_<dataLIF>
     # Reemplazar puntos por guiones bajos para nombres válidos
@@ -506,10 +509,11 @@ def create_secret_yaml(config: SecretConfig, backend_config: BackendConfig = Non
     
     IMPORTANTE: Con TridentBackendConfig, si useCHAP=true, los campos CHAP
     también van en el Secret (son "forbidden attributes" en el backend spec).
+    Lo mismo aplica para los campos de certificados.
     
     Args:
         config: Configuración del Secret validada
-        backend_config: Configuración del backend (opcional, para incluir CHAP)
+        backend_config: Configuración del backend (opcional, para incluir CHAP y certificados)
     
     Returns:
         Dict representando Secret listo para serializar a YAML
@@ -525,6 +529,15 @@ def create_secret_yaml(config: SecretConfig, backend_config: BackendConfig = Non
         secret_data['chapTargetInitiatorSecret'] = backend_config.chapTargetInitiatorSecret
         secret_data['chapUsername'] = backend_config.chapUserName
         secret_data['chapTargetUsername'] = backend_config.chapTargetUsername
+    
+    # Si se usan certificados, agregarlos al secret (también son forbidden attributes)
+    if backend_config:
+        if backend_config.clientCertificate:
+            secret_data['clientCertificate'] = backend_config.clientCertificate
+        if backend_config.clientPrivateKey:
+            secret_data['clientPrivateKey'] = backend_config.clientPrivateKey
+        if backend_config.trustedCACertificate:
+            secret_data['trustedCACertificate'] = backend_config.trustedCACertificate
     
     return {
         'apiVersion': 'v1',

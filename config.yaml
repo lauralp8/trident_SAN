@@ -42,9 +42,10 @@ backend:
   
   # === OTROS PARÁMETROS ===
   # labels: ""
-  # clientCertificate: ""
-  # clientPrivateKey: ""
-  # trustedCACertificate: ""
+  # Los siguientes campos de certificados se definen en secret.yaml (forbidden attributes):
+  # clientCertificate: ""         # Certificado del cliente (Base64) - va en secret.yaml
+  # clientPrivateKey: ""          # Clave privada del cliente (Base64) - va en secret.yaml
+  # trustedCACertificate: ""      # Certificado CA de confianza (Base64) - va en secret.yaml
   # aggregate: ""
   # limitAggregateUsage: ""
   # limitVolumeSize: ""
@@ -101,7 +102,11 @@ storageClass:
 #   - chapTargetInitiatorSecret: Secret del target iniciador (si useCHAP=true)
 #   - chapUsername: Usuario CHAP (si useCHAP=true)
 #   - chapTargetUsername: Usuario CHAP del target (si useCHAP=true)
+#   - clientCertificate: Certificado del cliente Base64 (si se usa auth por cert)
+#   - clientPrivateKey: Clave privada del cliente Base64 (si se usa auth por cert)
+#   - trustedCACertificate: Certificado CA Base64 (si se usa auth por cert)
 #
-# NOTA: Con TridentBackendConfig, los campos CHAP van en el secret, no en el backend.
+# NOTA: Con TridentBackendConfig, los campos CHAP y de certificados van en el secret.
+# Son "forbidden attributes" en el backend spec.
 # El backend solo tiene useCHAP=true y referencia el secret mediante credentials.name
 # ================================================================================
