@@ -19,7 +19,7 @@ spec:
   limitAggregateUsage: '80'
   limitVolumeSize: 500Gi
   lunsPerFlexvol: '100'
-  sanType: fcp
+  sanType: iscsi
   # formatOptions: ''
   # limitVolumePoolSize: ''
   denyNewVolumePools: 'false'
