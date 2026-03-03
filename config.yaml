@@ -30,13 +30,15 @@ backend:
   
   # === PARÁMETROS CHAP ===
   # Habilita la autenticación CHAP bidireccional para iSCSI.
-  # IMPORTANTE: Según la documentación de NetApp Trident, los valores CHAP
-  # se definen DIRECTAMENTE aquí en el backend spec, NO en secret.yaml.
+  # IMPORTANTE: En versiones recientes de Trident con TridentBackendConfig,
+  # los valores CHAP NO se definen aquí, van en secret.yaml
+  # Solo useCHAP se define en el backend para habilitar la funcionalidad.
   useCHAP: true
-  chapInitiatorSecret: "cl9qxWfnUFoinvk"
-  chapTargetInitiatorSecret: "rwbwtuigONgbw"
-  chapUserName: "uh2a1io325bFFILn"
-  chapTargetUsername: "iJF4sgjrnwOwQ"
+  # Los siguientes campos CHAP se definen en secret.yaml:
+  #   - chapInitiatorSecret
+  #   - chapTargetInitiatorSecret  
+  #   - chapUsername
+  #   - chapTargetUsername
   
   # === OTROS PARÁMETROS ===
   # labels: ""
@@ -90,13 +92,16 @@ storageClass:
   #   provisioningType: thin
   #   snapshots: "true"
 # ================================================================================
-# SECRET - Credenciales de acceso al SVM
+# SECRET - Credenciales de acceso y CHAP
 # ================================================================================
-# El secret de Kubernetes contiene SOLO las credenciales de acceso al SVM:
+# El secret de Kubernetes contiene:
 #   - username: Usuario administrador del SVM (ej: vsadmin)
 #   - password: Contraseña del usuario
+#   - chapInitiatorSecret: Secret del iniciador (si useCHAP=true)
+#   - chapTargetInitiatorSecret: Secret del target iniciador (si useCHAP=true)
+#   - chapUsername: Usuario CHAP (si useCHAP=true)
+#   - chapTargetUsername: Usuario CHAP del target (si useCHAP=true)
 #
-# NOTA: Los campos CHAP NO van en el secret, van directamente en el backend
-# config (arriba) según la documentación oficial de NetApp Trident.
-# El backend referencia el secret mediante backend.credentials.name
+# NOTA: Con TridentBackendConfig, los campos CHAP van en el secret, no en el backend.
+# El backend solo tiene useCHAP=true y referencia el secret mediante credentials.name
 # ================================================================================
