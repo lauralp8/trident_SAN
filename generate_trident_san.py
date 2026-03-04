@@ -97,11 +97,11 @@ class BackendConfig:
     name: str = 'backend-jc-san'
     namespace: str = 'trident'
     version: int = 1
-    backendName: str = ''  # Si está vacío, se genera automáticamente como ontap-san_{dataLIF}
+    backendName: str = ''  # Si está vacío, se genera automáticamente como ontap-san_{managementLIF}
     storageDriverName: str = 'ontap-san'
     useREST: bool = True
     managementLIF: str = ''  # Campo obligatorio - debe especificarse en config.yaml
-    dataLIF: str = ''  # Campo obligatorio - debe especificarse en config.yaml
+    dataLIF: str = ''  # Campo opcional - IP de datos para conexiones iSCSI/FCP
     svm: str = ''  # Campo obligatorio - debe especificarse en config.yaml
     storagePrefix: str = 'trident'
     credentialsName: str = 'trident-creds'  # Nombre del secret de credenciales
@@ -311,8 +311,6 @@ def load_config(config_file: str = "config.yaml") -> TridentConfig:
     errors = []
     if not backend_config.managementLIF:
         errors.append("  - backend.managementLIF")
-    if not backend_config.dataLIF:
-        errors.append("  - backend.dataLIF")
     if not backend_config.svm:
         errors.append("  - backend.svm")
     if not backend_config.credentialsName:
@@ -399,7 +397,7 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     Transforma la configuración de Python en un diccionario que representa
     el recurso Kubernetes TridentBackendConfig. Incluye lógica especial:
     
-    - Auto-generación de backendName basado en dataLIF sanitizada (si no se especifica)
+    - Auto-generación de backendName basado en managementLIF sanitizada (si no se especifica)
     - Uso de campos configurables (storageDriverName, sanType, useREST, etc.)
     - Inclusión de defaults y debugTraceFlags como subsecciones
     
@@ -427,11 +425,11 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict[str, An
     backend.pop('clientPrivateKey', None)
     backend.pop('trustedCACertificate', None)
     
-    # Generar backendName automáticamente solo si no se especificó: ontap-san_<dataLIF>
+    # Generar backendName automáticamente solo si no se especificó: ontap-san_<managementLIF>
     # Reemplazar puntos por guiones bajos para nombres válidos
     if not backend_name_spec:
-        data_lif_sanitized = backend['dataLIF'].replace('.', '_')
-        backend_name_spec = f"{storage_driver_name}_{data_lif_sanitized}"
+        mgmt_lif_sanitized = backend['managementLIF'].replace('.', '_')
+        backend_name_spec = f"{storage_driver_name}_{mgmt_lif_sanitized}"
     
     return {
         'apiVersion': 'trident.netapp.io/v1',

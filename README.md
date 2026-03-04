@@ -359,15 +359,14 @@ storageClass:
 
 **Campos Obligatorios:**
 - `backend.managementLIF`
-- `backend.dataLIF`
 - `backend.svm`
 - `backend.credentials.name`
 - `storageClass.name`
 
 **Campos Auto-generados:**
 Si no se especifican, el generador los creará automáticamente:
-- `backend.backendName`: Se genera como `<storageDriverName>_<dataLIF_sanitizada>`
-- Ejemplo: `ontap-san_192_168_205_203`
+- `backend.backendName`: Se genera como `<storageDriverName>_<managementLIF_sanitizada>`
+- Ejemplo: `ontap-san_192_168_1_100`
 
 **Forbidden Attributes (IMPORTANTE):**
 Los siguientes campos NO deben incluirse en config.yaml, sino en secret.yaml:
@@ -767,7 +766,7 @@ kubectl logs -n trident -l app=trident-csi --tail=100
 |-----------|-------------------|-------------|-------------|
 | `version` | `1` | Sí | Versión del esquema de configuración |
 | `storageDriverName` | `ontap-san` | Sí | Driver de almacenamiento de Trident |
-| `backendName` | `<driverName>_<dataLIF>` | No | Nombre del backend (auto-generado si no se especifica) |
+| `backendName` | `<driverName>_<managementLIF>` | No | Nombre del backend (auto-generado si no se especifica) |
 | `sanType` | `iscsi` | Sí | Protocolo SAN a utilizar |
 | `useREST` | `true` | Sí | Utilizar API REST de ONTAP |
 
@@ -776,7 +775,7 @@ kubectl logs -n trident -l app=trident-csi --tail=100
 | Parámetro | Ejemplo | Obligatorio | Descripción |
 |-----------|---------|-------------|-------------|
 | `managementLIF` | `192.168.1.100` | Sí | IP de gestión del SVM |
-| `dataLIF` | `192.168.1.101` | Sí | IP de datos para conexiones iSCSI |
+| `dataLIF` | `192.168.1.101` | No | IP de datos para conexiones iSCSI (opcional) |
 | `svm` | `svm-san-01` | Sí | Storage Virtual Machine en ONTAP |
 
 #### Autenticación
@@ -953,7 +952,6 @@ if not backend_config.managementLIF:
 
 **Validaciones Ejecutadas:**
 - backend.managementLIF no vacío
-- backend.dataLIF no vacío
 - backend.svm no vacío
 - backend.credentials.name no vacío
 
@@ -980,8 +978,8 @@ def create_backend_yaml(config: BackendConfig, secret_name: str) -> Dict
 **Lógica de backendName:**
 ```python
 if not backend_name_spec:
-    data_lif_sanitized = backend['dataLIF'].replace('.', '_')
-    backend_name_spec = f"{storage_driver_name}_{data_lif_sanitized}"
+    mgmt_lif_sanitized = backend['managementLIF'].replace('.', '_')
+    backend_name_spec = f"{storage_driver_name}_{mgmt_lif_sanitized}"
 ```
 
 #### 7. Generación de StorageClass
@@ -1398,7 +1396,6 @@ debugTraceFlags:
 ```
 ERROR: Los siguientes campos son obligatorios en config.yaml:
   - backend.managementLIF
-  - backend.dataLIF
   - backend.svm
   - backend.credentials.name
 ```
@@ -1413,11 +1410,11 @@ ERROR: Los siguientes campos son obligatorios en config.yaml:
 **Ejemplo de Corrección:**
 ```yaml
 backend:
-  managementLIF: 192.168.204.203  # Añadir valor
-  dataLIF: 192.168.205.203        # Añadir valor
-  svm: SVM-SAN-01                 # Añadir valor
+  managementLIF: 192.168.204.203  # Añadir valor (obligatorio)
+  svm: SVM-SAN-01                 # Añadir valor (obligatorio)
   credentials:
-    name: trident-creds           # Añadir valor
+    name: trident-creds           # Añadir valor (obligatorio)
+  dataLIF: 192.168.205.203        # Opcional - IP de datos para iSCSI
 ```
 
 #### Error 2: Archivo config.yaml No Encontrado

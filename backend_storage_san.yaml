@@ -9,7 +9,6 @@ spec:
   storageDriverName: ontap-san
   useREST: true
   managementLIF: sansvm-mgmt.demo.netapp.com
-  dataLIF: sansvm.demo.netapp.com
   svm: sansvm
   storagePrefix: lab
   labels:
