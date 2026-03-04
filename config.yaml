@@ -46,7 +46,6 @@ backend:
   # limitVolumePoolSize: ""
   lunsPerFlexvol: "100"
   sanType: iscsi
-  useCHAP: false
   # formatOptions: ""
   denyNewVolumePools: "false"
   
