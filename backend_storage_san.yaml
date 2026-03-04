@@ -20,6 +20,7 @@ spec:
   limitVolumeSize: 500Gi
   lunsPerFlexvol: '100'
   sanType: iscsi
+  useCHAP: false
   # formatOptions: ''
   # limitVolumePoolSize: ''
   denyNewVolumePools: 'false'
